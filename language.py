@@ -1,8 +1,9 @@
-'''
+"""This file implements the language used to represent theories. Programs in this langauge are represented as lists of tuples of integers. Each tuple represents one instruction. The first integer in each tuple is an index that designates an instruction, and subsequent integers are arguments that are passed to the instruction. Some instructions take no arguments, in which case the tuples which referenced them would simpy contain a single integer.
+
 The functions below that start with 'instruction_' are used as the basic  instructions of the theory language. Each one takes two arguments: "state" and "args". "state" is a 2-tuple consisting of a list of integers (called the "int-stack") and a list of sets of claims (called the "claim-stack"), and "args" is a list of integers that can be used to pass additional arguments to the instruction, if necessary.
 
 Most instructions, by default, don't return anything, and instead just modifying "state". Some special instructions like "if" or "for" return a boolean or integer that will be used to control the flow of execution. Certain instructions are only well-defined for a certain type of program state. In the case that an instruction recieves a program state for which it is undefined, it will return -1 to indicate a runtime error.
-'''
+"""
 
 def instruction_if(state, args):
   """Used to denote that a block will only be executed if a condition passes. Returns False if the top integer is 0, and True otherwise. Undefined when the int-stack is empty."""
@@ -334,11 +335,25 @@ forking_functions=[
 ]
 
 def get_instruction_function_name(instruction_index):
-  """Returns the name of a basic instruction. The name returned is equal to the name used in the instructions declaration, but without the "instruction_" prefix."""
+  """Returns the name of a basic instruction. The name returned is equal to the name used in the instructions declaration, but without the "instruction_" prefix.
+
+  Args:
+    instruction_index (int): The index of the instruction in the "instruction_functions" array.
+
+  Returns:
+    A string containing a human-readable name for the specified function.
+  """
   return instruction_functions[instruction_index].__name__[12:]
 
 def program_string(theory):
-  """Returns a string containing a human-readable display of a theory. Each line, there is the name of one basic instruction, along with whatever arguments associated with that instruction. Instructions inside blocks have indentation."""
+  """Returns a string containing a human-readable display of a theory. Each line, there is the name of one basic instruction, along with whatever arguments associated with that instruction. Instructions inside blocks have indentation.
+  
+  Args:
+    theory (tuple): The program which will be described by the return string.
+
+  Returns:
+    A string containing human-readable a description of each instruction in the theory, in order, with a linebreak between each one. "get_instruction_function_name" is used to get the name for each instruction, and each name is followed up with the arguments passed to it. Tabs are included to denote blocks.
+  """
   string=""
   indentation=0
 
@@ -364,12 +379,31 @@ def program_string(theory):
   return string
 
 def inlined_program_string(theory_index, theories, routines):
-  """Inlines a program (replaces each instance of the "exec" instruction with the implementation of the executede theory or routine) and returns the corresponding program string."""
+  """Inlines a program (replaces each instance of the "exec" instruction with the implementation of the executede theory or routine) and returns the corresponding program string.
+
+  Args:
+    theory_index (int): The index of the theory in "theories" that will be used to construct the program string.
+    theories (list): A list of programs. This will be used along with "theory_index" to determine which theory to describe, and is used when a program references a theory.
+    routines (list): A list of programs. This will be used whenever a program references a routine.
+
+  Returns:
+    A string containing a human-readable description of the specified theory, as is produced by the "program_string" function.
+  """
   inlined_theory=inline_execs(theory_index, theories, routines)
   return program_string(inlined_theory)
 
 def inline_execs(theory_index, theories, routines, inline_theories=True):
-  """Replaces each instance of the "exec" instruction with teh implementation of the executed theory or routine."""
+  """Replaces each instance of the "exec" instruction with teh implementation of the executed theory or routine.
+
+  Args:
+    theory_index (int): The index of the theory in "theories" to produce an inlined version of.
+    theories (list): The list of theories that can be referenced by a program. This will be used along with "theory_index" to determine which theory to use for inlining.
+    routines (list): The list of routines that can be referenced by a program.
+    inine_theories (bool): Defaults to True. If this is set to false, this function will only inline routines, and not theories.
+
+  Returns:
+    A version of the program in "theories" at index "theory_index", except that all references to other programs are replaced with their implementations, as they appear in "theories" and "routines"
+  """
   index=0
   theory=theories[theory_index]
   while True:
@@ -392,7 +426,18 @@ def inline_execs(theory_index, theories, routines, inline_theories=True):
   return theory
 
 def run_theory(theory_index, theories, routines, input_set, execution_limit=100):
-  """Runs a theory on the provided set of claims and returns the resulting claims."""
+  """Runs a theory on the provided set of claims and returns the resulting claims.
+
+  Args:
+    theory_index (int): The index of the theory in "theories" to be executed.
+    theories (list): The list of theories that can be referenced by the executing theory. This is also used, along with theory_index, to find the theory which will be executed
+    routines (list): The list of routines that can be referenced by the executing theory.
+    input_set (list): A list of claims that will be fed to the executing theory as input.
+    execution_limit (int): Defaults to 100. If execution reaches this number of steps without returning, it will stop.
+
+  Returns:
+    The result of the specified theory's execution, in the form of a list of pairs of claims and claim records.
+  """
   control_map=([],[])
   control_stack=[]
   
@@ -408,7 +453,22 @@ def run_theory(theory_index, theories, routines, input_set, execution_limit=100)
   return run_theory_branch(theory, (0, [], [copy_claim_set(input_set)], []), control_map, [], execution_limit, 0)
 
 def run_theory_branch(theory, state, control_map, touched_inputs, execution_limit, execution_count):
-  """Executes a branch of execution of a theory, and returns the resulting claims. May recursively branch into multiple strands of execution if necessary."""
+  """Executes a branch of execution of a theory, and returns the resulting claims. May recursively branch into multiple strands of execution if necessary.
+
+  Args:
+    theory (list): The theory to execute.
+    state (tuple): A tuple of the form (position, int_stack, claim_stack, for_counts)
+      position (int): The current position of execution in the theory's implementation.
+      int_stack (list): A list of integers that acts as the int stack.
+      claim_stack (list): A list of claims lists of claims that acts as the claim stack.
+      for_counts (list): A list of integers that is used as a stack to track the current number of iterations left on for loops that execution is currently within.
+    control_map (tuple): A tuple of two lists of integers that describe the positions of control flow instructions (if, else, while, for, and end) in the theory being executed. Each integer in the first list describes the start of a block, and the corresponding integer in the second list describes the end of that block. This is used to jump from some instructions to others during execution.
+    touched_inputs (list): A list of the indeces of inputs that have been "touched" by this branch so far. An input is considered "touched" when it has been selected from initial set of inputs so that it be directly interacted with by the instructions in the theory.
+    execution_limit (int): If the execution reaches this number of steps without returning, it will stop and return an empty list.
+    execution_count (int): The number of steps since execution began. Each branch will increment this number each step and pass this value to each of it's child branches, so that they can properly keep track of the number of steps.
+  Returns:
+    A list of claims produced by this branch. The list will be empty if execution failed for any reason.
+  """
   while True:
     pointer=state[0]
     if pointer>=len(theory):
@@ -476,11 +536,25 @@ def run_theory_branch(theory, state, control_map, touched_inputs, execution_limi
       return []
 
 def copy_claim_set(claims):
-  """Returns a set copy of a set of claims."""
+  """Returns a set copy of a set of claims.
+  
+  Args:
+    claims (list): The claims to copy
+
+  Returns:
+    A list of claims identical to the input.
+  """
   return [(claim[0], claim[1][:]) for claim in claims]
 
 def is_program_valid(program):
-  """Returns true if a program is valid, and false otherwise. A program is valid if and only if all block openers have corresponding block closers, all "else" instructions happen between a block start and block end, and the arguments for each theory are of the proper form (e.g. there no "nonNegInt" arguments are negative)."""
+  """Returns true if a program is valid, and false otherwise. A program is valid if and only if all block openers have corresponding block closers, all "else" instructions happen between a block start and block end, and the arguments for each theory are of the proper form (e.g. there no "nonNegInt" arguments are negative).
+
+  Args:
+    program (list): A program to analyze.
+
+  Returns:
+    A bool that is True if the program is valid, and False otherwise.
+  """
   block_starter_stack=[]
   for instruction in program:
     instruction_function=instruction_functions[instruction[0]]

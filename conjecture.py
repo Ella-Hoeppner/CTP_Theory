@@ -9,6 +9,17 @@ MUTATION_TYPE_DISTRIBUTION=[0.4,0.4,0.2]
 INSERTION_TYPE_DISTRIBUTION=[0.9, 0.05, 0.05]
 
 def vary(theories, theory_index, routines, steps=1):
+  """Generates a variation on a given theory.
+
+  Args:
+    theories (list): The list of theories that can be referenced by the specified theory. This is also used, along with "theory_index", to determine which theory will be varied.
+    theory_index (int): The index of the theory in "theories" that should be varied.
+    routines (list): The list of routines that can be referenced by the specified theory.
+    steps (int): Defaults to 1. This controls the number of iterations of variation the algorithm should perform on the input before returning. The higher this number is, the more different from the original theory the output will be.
+
+  Returns:
+    A new theory, which is created by randomly varying the provided theory.
+  """
   theory=theories[theory_index]
 
   theory_count=len(theories)
@@ -115,7 +126,14 @@ def vary(theories, theory_index, routines, steps=1):
   return theory
 
 def choose_from_distribution(d):
-  """Given a list of non-negative numbers that sum to 1, this function randomly returns the index of one of the numbers. The probability of a given index being chosen is equal to the number in the list at that index."""
+  """Given a list of non-negative numbers that sum to 1, this function randomly returns the index of one of the numbers. The probability of a given index being chosen is equal to the number in the list at that index.
+
+  Args:
+    d (list): A list of numbers that sum to 1. This list describes a probability distribution, where each integer greater than or equal to 0 and less than the length of "d" is assigned probability equal to the number in the list at the corresponding index.
+
+  Returns:
+    An integer greater than or equal to 0 and less than the length of "d". The integer will be chosen according to the probabilities that "d" describes.
+  """
   choice_value=random()
   for i in range(len(d)):
     choice_value-=d[i]
@@ -124,11 +142,19 @@ def choose_from_distribution(d):
   return -1
 
 def generateRandomNonNegInt():
-  """Generates a random integer that is greater than or equal to 0. Uses a geometric distribution."""
+  """Generates a random integer that is greater than or equal to 0. Uses a geometric distribution.
+
+  Returns:
+    A value chosen using a geometric distribution with p=5, starting  at 0.
+  """
   return geometric(p=0.5)
 
 def generateRandomInt():
-  """Generates a random integer. Uses a geometric distribution."""
+  """Generates a random integer. Uses a geometric distribution.
+
+  Returns:
+    An integer that is chosen that has a 50% chance of being 0 or greater, and a 50% chance of being negative.
+  """
   if random()>0.5:
     return geometric(p=0.5)
   else:
