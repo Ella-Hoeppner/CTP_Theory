@@ -133,5 +133,5 @@ def test_conjecture():
   print(language.program_string(theory))
   for i in range(10):
     theory=conjecture.vary([theory], 0, [], steps=1)
-    print(f"Theory after {i+1} stages of variation:")
+    print("Theory after {i+1} stages of variation:")
     print(language.program_string(theory))
