@@ -1,7 +1,7 @@
 # CTP_Theory
 An implementation of CTP Theory, a Critical Rationalist approach to Artificial General Intelligence.
 
-See [this blog post](https://www.ellahoeppner.com/blog/post/ctp_theory) for a description of CTP Theory.
+See [this blog post](https://www.ellahoeppner.com/ctp-theory-a-critical-rationalist-approach-to-agi/) for a description of CTP Theory.
 
 This repository contains an implementation of CTP Theory using a format for A-Claims that consists of a boolean and a list of integers, stored together in a 2-tuple. A-Claims are defined to be contradictory if they have identical lists of integers and opposite boolean values.
 
